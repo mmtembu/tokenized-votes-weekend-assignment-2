@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.7.0 <0.9.0;
 
-interface IERC20Votes {
+import {ERC20Votes} from "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
+
+interface IERC20Votes{
     function getPastVotes(address, uint256) external returns (uint256);
 }
 
@@ -36,10 +38,11 @@ contract CustomBallot {
     }
 
     function vote(uint256 proposal, uint256 amount) external {
-        uint256 votingPowerAvailable = voteToken.getPastVotes(
+        uint256 pastVotes = voteToken.getPastVotes(
             msg.sender,
             referenceBlock
-        ) - spentVotePower[msg.sender]; // TODO: Change this
+        );
+        uint256 votingPowerAvailable = votingPower(pastVotes);
         require(votingPowerAvailable >= amount, "Has not enough voting power");
         spentVotePower[msg.sender] += amount;
         proposals[proposal].voteCount += amount;
@@ -56,11 +59,11 @@ contract CustomBallot {
         }
     }
 
-    function winnerName() external view returns (bytes32 winnerName_) {
+    function winnerName() public view returns (bytes32 winnerName_) {
         winnerName_ = proposals[winningProposal()].name;
     }
 
-    function votingPower() public view returns (uint256 votingPower) {
-        //TODO: do this
+    function votingPower(uint256 pastVotes) public view returns (uint256 votingPower_) {
+        votingPower_ = pastVotes - spentVotePower[msg.sender];
     }
 }
